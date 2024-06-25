@@ -12,6 +12,7 @@ class Larvatus
     private $url;
     private $method;
     private $environment;
+    private $routePrefix = '';
 
     public function __construct($environment = 'production')
     {
@@ -41,12 +42,9 @@ class Larvatus
 
     private function addRoute($method, $route, $handler)
     {
-        // Replace :param with named capture group (?P<param>[^/]+)
+        $route = $this->routePrefix . $route;
         $route = preg_replace('/:(\w+)/', '(?P<$1>[^/]+)', $route);
-
-        // Convert route to a valid regex
         $route = '#^' . $route . '$#';
-
         $this->routes[$method][$route] = $handler;
     }
 
@@ -68,6 +66,14 @@ class Larvatus
     public function delete($route, $handler)
     {
         $this->addRoute('DELETE', $route, $handler);
+    }
+
+    public function group($prefix, $callback)
+    {
+        $currentPrefix = $this->routePrefix;
+        $this->routePrefix .= $prefix;
+        call_user_func($callback);
+        $this->routePrefix = $currentPrefix;
     }
 
     public function listen()
