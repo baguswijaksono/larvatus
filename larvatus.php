@@ -13,8 +13,9 @@ class Larvatus
     private $method;
     private $environment;
     private $routePrefix = '';
+    private $pdo;
 
-    public function __construct($environment = 'production')
+    public function __construct($environment = 'production', $dbConfig = [])
     {
         $this->environment = $environment;
 
@@ -27,6 +28,11 @@ class Larvatus
 
         // Start session
         session_start();
+
+        // Initialize database connection if config is provided
+        if (!empty($dbConfig)) {
+            $this->initializeDb($dbConfig);
+        }
     }
 
     private function setErrorReporting()
@@ -110,8 +116,33 @@ class Larvatus
         }
     }
 
+    private function initializeDb($dbConfig)
+    {
+        try {
+            $dsn = "mysql:host={$dbConfig['host']};dbname={$dbConfig['dbname']};charset=utf8mb4";
+            $this->pdo = new PDO($dsn, $dbConfig['username'], $dbConfig['password']);
+            $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            $this->pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            $this->errorResponse(500, 'Database connection failed: ' . $e->getMessage());
+        }
+    }
+
+    public function executeQuery($sql, $params = [])
+    {
+        try {
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute($params);
+            return $stmt;
+        } catch (PDOException $e) {
+            $this->errorResponse(500, 'Query execution failed: ' . $e->getMessage());
+        }
+    }
+
     public function __destruct()
     {
-        // Implement database connection closing if needed
+        // Close database connection if needed
+        $this->pdo = null;
     }
 }
+?>
