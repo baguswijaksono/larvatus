@@ -138,6 +138,12 @@ class Larvatus
             $this->errorResponse(500, 'Query execution failed: ' . $e->getMessage());
         }
     }
+    
+    public static function sanitizeInput($input)
+    {
+        return htmlspecialchars($input, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+    }
+
 
     public function __destruct()
     {
