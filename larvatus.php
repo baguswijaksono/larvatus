@@ -143,7 +143,11 @@ class Larvatus
     {
         return htmlspecialchars($input, ENT_QUOTES | ENT_HTML5, 'UTF-8');
     }
-
+    
+    public static function generateCSRFToken()
+    {
+        return bin2hex(random_bytes(32));
+    }
 
     public function __destruct()
     {
