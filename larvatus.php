@@ -162,6 +162,23 @@ class Larvatus
     {
         return password_verify($password, $hashedPassword);
     }
+    
+    public static function verifyFileUpload($fileData, $uploadPath, $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif'])
+    {
+        $fileName = basename($fileData['name']);
+        $fileTmpName = $fileData['tmp_name'];
+        $fileType = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+        if (!in_array($fileType, $allowedExtensions)) {
+            return false; 
+        }
+        $newFileName = self::generateRandomString(10) . '_' . $fileName;
+        $uploadFilePath = $uploadPath . '/' . $newFileName;
+        if (move_uploaded_file($fileTmpName, $uploadFilePath)) {
+            return $newFileName; 
+        } else {
+            return false; 
+        }
+    }
 
     public function __destruct()
     {
