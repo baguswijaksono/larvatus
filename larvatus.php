@@ -158,6 +158,10 @@ class Larvatus
     {
         return password_hash($password, PASSWORD_BCRYPT);
     }
+    public static function verifyPassword($password, $hashedPassword)
+    {
+        return password_verify($password, $hashedPassword);
+    }
 
     public function __destruct()
     {
