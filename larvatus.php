@@ -153,6 +153,11 @@ class Larvatus
     {
         return hash_equals($token, $sessionToken);
     }
+    
+    public static function hashPassword($password)
+    {
+        return password_hash($password, PASSWORD_BCRYPT);
+    }
 
     public function __destruct()
     {
