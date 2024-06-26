@@ -149,6 +149,11 @@ class Larvatus
         return bin2hex(random_bytes(32));
     }
 
+    public static function validateCSRFToken($token, $sessionToken)
+    {
+        return hash_equals($token, $sessionToken);
+    }
+
     public function __destruct()
     {
         // Close database connection if needed
