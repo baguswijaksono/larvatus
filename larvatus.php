@@ -363,4 +363,49 @@ class Response
     }
 }
 
+class Response
+{
+    private $status;
+    private $headers;
+    private $body;
+
+    public function __construct()
+    {
+        $this->status = 200;
+        $this->headers = [];
+        $this->body = '';
+    }
+
+    public function setStatus($status)
+    {
+        $this->status = $status;
+    }
+
+    public function setHeader($name, $value)
+    {
+        $this->headers[$name] = $value;
+    }
+
+    public function write($body)
+    {
+        $this->body .= $body;
+    }
+
+    public function json($data)
+    {
+        $this->setHeader('Content-Type', 'application/json');
+        $this->body = json_encode($data);
+    }
+
+    public function send()
+    {
+        http_response_code($this->status);
+        foreach ($this->headers as $name => $value) {
+            header("$name: $value");
+        }
+        echo $this->body;
+        exit;
+    }
+}
+
 
