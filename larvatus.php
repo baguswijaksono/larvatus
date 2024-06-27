@@ -91,8 +91,15 @@ class Larvatus
                 // Remove the full match
                 array_shift($matches);
 
-                // Pass $matches as req.params to handler
-                return call_user_func_array($handler, [$matches]);
+                // Create request and response objects
+                $request = new Request();
+                $response = new Response();
+
+                // Set route parameters in the request object
+                $request->setParams($matches);
+
+                // Pass request and response objects to the handler
+                return call_user_func_array($handler, [$request, $response]);
             }
         }
         $this->errorResponse(404, 'Not Found');
