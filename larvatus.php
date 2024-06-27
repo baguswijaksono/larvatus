@@ -249,3 +249,118 @@ class ORM
     }
 }
 
+class Request
+{
+    private $method;
+    private $url;
+    private $headers;
+    private $body;
+    private $queryParams;
+    private $parsedBody;
+    private $files;
+    private $params;
+
+    public function __construct()
+    {
+        $this->method = $_SERVER['REQUEST_METHOD'];
+        $this->url = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+        $this->headers = getallheaders();
+        $this->body = file_get_contents('php://input');
+        $this->queryParams = $_GET;
+        $this->parsedBody = $_POST;
+        $this->files = $_FILES;
+        $this->params = [];
+    }
+
+    public function getMethod()
+    {
+        return $this->method;
+    }
+
+    public function getUrl()
+    {
+        return $this->url;
+    }
+
+    public function getHeaders()
+    {
+        return $this->headers;
+    }
+
+    public function getBody()
+    {
+        return $this->body;
+    }
+
+    public function getQueryParams()
+    {
+        return $this->queryParams;
+    }
+
+    public function getParsedBody()
+    {
+        return $this->parsedBody;
+    }
+
+    public function getFiles()
+    {
+        return $this->files;
+    }
+
+    public function getParams()
+    {
+        return $this->params;
+    }
+
+    public function setParams($params)
+    {
+        $this->params = $params;
+    }
+}
+
+class Response
+{
+    private $status;
+    private $headers;
+    private $body;
+
+    public function __construct()
+    {
+        $this->status = 200;
+        $this->headers = [];
+        $this->body = '';
+    }
+
+    public function setStatus($status)
+    {
+        $this->status = $status;
+    }
+
+    public function setHeader($name, $value)
+    {
+        $this->headers[$name] = $value;
+    }
+
+    public function write($body)
+    {
+        $this->body .= $body;
+    }
+
+    public function json($data)
+    {
+        $this->setHeader('Content-Type', 'application/json');
+        $this->body = json_encode($data);
+    }
+
+    public function send()
+    {
+        http_response_code($this->status);
+        foreach ($this->headers as $name => $value) {
+            header("$name: $value");
+        }
+        echo $this->body;
+        exit;
+    }
+}
+
+
