@@ -202,60 +202,6 @@ class Larvatus
     }
 }
 
-class ORM
-{
-    protected $pdo;
-    protected $table;
-
-    public function __construct($pdo, $table)
-    {
-        $this->pdo = $pdo;
-        $this->table = $table;
-    }
-
-    public function find($id)
-    {
-        $stmt = $this->pdo->prepare("SELECT * FROM {$this->table} WHERE id = :id");
-        $stmt->execute(['id' => $id]);
-        return $stmt->fetch(PDO::FETCH_ASSOC);
-    }
-
-    public function all()
-    {
-        $stmt = $this->pdo->query("SELECT * FROM {$this->table}");
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    }
-
-    public function create($data)
-    {
-        $keys = implode(',', array_keys($data));
-        $values = ':' . implode(',:', array_keys($data));
-        $sql = "INSERT INTO {$this->table} ({$keys}) VALUES ({$values})";
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->execute($data);
-        return $this->pdo->lastInsertId();
-    }
-
-    public function update($id, $data)
-    {
-        $fields = '';
-        foreach ($data as $key => $value) {
-            $fields .= "$key=:$key,";
-        }
-        $fields = rtrim($fields, ',');
-        $sql = "UPDATE {$this->table} SET {$fields} WHERE id = :id";
-        $data['id'] = $id;
-        $stmt = $this->pdo->prepare($sql);
-        return $stmt->execute($data);
-    }
-
-    public function delete($id)
-    {
-        $stmt = $this->pdo->prepare("DELETE FROM {$this->table} WHERE id = :id");
-        return $stmt->execute(['id' => $id]);
-    }
-}
-
 class Request
 {
     private $method;
