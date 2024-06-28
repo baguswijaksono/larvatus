@@ -15,7 +15,7 @@ class Larvatus
     private $routePrefix = '';
     private $pdo;
 
-    public function __construct($environment = 'production', $dbConfig = [])
+    public function __construct($environment = 'production')
     {
         $this->environment = $environment;
 
@@ -28,11 +28,6 @@ class Larvatus
 
         // Start session
         session_start();
-
-        // Initialize database connection if config is provided
-        if (!empty($dbConfig)) {
-            $this->initializeDb($dbConfig);
-        }
     }
 
     private function setErrorReporting()
@@ -120,70 +115,6 @@ class Larvatus
             exit;
         } else {
             $this->jsonResponse(['error' => ['message' => $message]], $status);
-        }
-    }
-
-    private function initializeDb($dbConfig)
-    {
-        try {
-            $dsn = "mysql:host={$dbConfig['host']};dbname={$dbConfig['dbname']};charset=utf8mb4";
-            $this->pdo = new PDO($dsn, $dbConfig['username'], $dbConfig['password']);
-            $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-            $this->pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
-        } catch (PDOException $e) {
-            $this->errorResponse(500, 'Database connection failed: ' . $e->getMessage());
-        }
-    }
-
-    public function executeQuery($sql, $params = [])
-    {
-        try {
-            $stmt = $this->pdo->prepare($sql);
-            $stmt->execute($params);
-            return $stmt;
-        } catch (PDOException $e) {
-            $this->errorResponse(500, 'Query execution failed: ' . $e->getMessage());
-        }
-    }
-    
-    public static function sanitizeInput($input)
-    {
-        return htmlspecialchars($input, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-    }
-    
-    public static function generateCSRFToken()
-    {
-        return bin2hex(random_bytes(32));
-    }
-
-    public static function validateCSRFToken($token, $sessionToken)
-    {
-        return hash_equals($token, $sessionToken);
-    }
-    
-    public static function hashPassword($password)
-    {
-        return password_hash($password, PASSWORD_BCRYPT);
-    }
-    public static function verifyPassword($password, $hashedPassword)
-    {
-        return password_verify($password, $hashedPassword);
-    }
-    
-    public static function verifyFileUpload($fileData, $uploadPath, $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif'])
-    {
-        $fileName = basename($fileData['name']);
-        $fileTmpName = $fileData['tmp_name'];
-        $fileType = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
-        if (!in_array($fileType, $allowedExtensions)) {
-            return false; 
-        }
-        $newFileName = self::generateRandomString(10) . '_' . $fileName;
-        $uploadFilePath = $uploadPath . '/' . $newFileName;
-        if (move_uploaded_file($fileTmpName, $uploadFilePath)) {
-            return $newFileName; 
-        } else {
-            return false; 
         }
     }
     
