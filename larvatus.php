@@ -299,3 +299,42 @@ class Router
         return [null, []];
     }
 }
+
+class View
+{
+    private $path;
+    private $data;
+
+    public function __construct($path)
+    {
+        $this->path = $path;
+        $this->data = [];
+    }
+
+    public function set($key, $value)
+    {
+        $this->data[$key] = $value;
+    }
+
+    public function render($template, $data = [])
+    {
+        $data = array_merge($this->data, $data);
+        $templatePath = $this->path . '/' . $template . '.php';
+
+        if (file_exists($templatePath)) {
+            extract($data);
+            ob_start();
+            include $templatePath;
+            $content = ob_get_clean();
+            return $content;
+        } else {
+            throw new Exception("Template not found: " . $templatePath);
+        }
+    }
+
+    public function display($template, $data = [])
+    {
+        echo $this->render($template, $data);
+    }
+}
+
