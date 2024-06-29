@@ -2,32 +2,22 @@
 
 class Larvatus
 {
-    private $routes = [
-        'GET' => [],
-        'POST' => [],
-        'PUT' => [],
-        'DELETE' => []
-    ];
-
+    private $router;
+    private $middleware;
     private $url;
     private $method;
     private $environment;
-    private $routePrefix = '';
     private $pdo;
 
     public function __construct($environment = 'production')
     {
         $this->environment = $environment;
-
-        // Initialize URL and method from the server request
-        $this->url = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH); // Use parse_url to get only path part
+        $this->url = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
         $this->method = $_SERVER['REQUEST_METHOD'];
-
-        // Set error reporting based on environment
         $this->setErrorReporting();
-
-        // Start session
         session_start();
+        $this->router = new Router();
+        $this->middleware = new Middleware();
     }
 
     private function setErrorReporting()
@@ -41,97 +31,63 @@ class Larvatus
         }
     }
 
-    private function addRoute($method, $route, $handler)
-    {
-        $route = $this->routePrefix . $route;
-        $route = preg_replace('/:(\w+)/', '(?P<$1>[^/]+)', $route);
-        $route = '#^' . $route . '$#';
-        $this->routes[$method][$route] = $handler;
-    }
-
     public function get($route, $handler)
     {
-        $this->addRoute('GET', $route, $handler);
+        $this->router->get($route, $handler);
     }
 
     public function post($route, $handler)
     {
-        $this->addRoute('POST', $route, $handler);
+        $this->router->post($route, $handler);
     }
 
     public function put($route, $handler)
     {
-        $this->addRoute('PUT', $route, $handler);
+        $this->router->put($route, $handler);
     }
 
     public function delete($route, $handler)
     {
-        $this->addRoute('DELETE', $route, $handler);
+        $this->router->delete($route, $handler);
     }
 
     public function group($prefix, $callback)
     {
-        $currentPrefix = $this->routePrefix;
-        $this->routePrefix .= $prefix;
-        call_user_func($callback);
-        $this->routePrefix = $currentPrefix;
+        $this->router->group($prefix, $callback);
+    }
+
+    public function use($middleware)
+    {
+        $this->middleware->add($middleware);
     }
 
     public function listen()
     {
-        $routes = $this->routes[$this->method] ?? [];
-
-        foreach ($routes as $route => $handler) {
-            if (preg_match($route, $this->url, $matches)) {
-                // Remove the full match
-                array_shift($matches);
-
-                // Create request and response objects
-                $request = new Request();
-                $response = new Response();
-
-                // Set route parameters in the request object
-                $request->setParams($matches);
-
-                // Pass request and response objects to the handler
-                return call_user_func_array($handler, [$request, $response]);
+        $this->middleware->add([new ErrorHandler(), 'handle']);
+        $this->middleware->handle(new Request(), new Response(), function($request, $response) {
+            list($handler, $params) = $this->router->match($this->method, $this->url);
+            if ($handler) {
+                $request->setParams($params);
+                return call_user_func($handler, $request, $response);
+            } else {
+                $this->errorResponse($response, 404, 'Not Found');
             }
-        }
-        $this->errorResponse(404, 'Not Found');
+        });
     }
 
-    public function jsonResponse($data, $status)
+    private function errorResponse($response, $status, $message)
     {
-        header('Content-Type: application/json');
-        http_response_code($status);
-        echo json_encode($data);
-        exit; // Terminate script execution after sending response
-    }
-
-    private function errorResponse($status, $message)
-    {
-        if ($this->method === 'GET') {
-            echo "<h1>$status $message</h1>";
-            exit;
-        } else {
-            $this->jsonResponse(['error' => ['message' => $message]], $status);
-        }
-    }
-    
-    public static function redirect($url, $permanent = false)
-    {
-        if (headers_sent() === false) {
-            header('Location: ' . $url, true, ($permanent === true) ? 301 : 302);
-        }
-        exit();
+        $response->setStatus($status);
+        $response->json(['error' => $message]);
+        $response->send();
     }
 
     public function __destruct()
     {
-        // Close database connection if needed
-        $this->pdo = null;
+        
     }
 }
+
 
 class Request
 {
@@ -247,4 +203,99 @@ class Response
     }
 }
 
+class Middleware
+{
+    private $middlewareStack = [];
 
+    public function add($middleware)
+    {
+        $this->middlewareStack[] = $middleware;
+    }
+
+    public function handle($request, $response, $next)
+    {
+        $middleware = array_shift($this->middlewareStack);
+        if ($middleware) {
+            return $middleware($request, $response, function() use ($request, $response, $next) {
+                return $this->handle($request, $response, $next);
+            });
+        } else {
+            return $next($request, $response);
+        }
+    }
+}
+
+class ErrorHandler
+{
+    public function handle($request, $response, $next)
+    {
+        try {
+            return $next($request, $response);
+        } catch (Exception $e) {
+            $response->setStatus(500);
+            $response->json(['error' => $e->getMessage()]);
+            $response->send();
+        }
+    }
+}
+
+class Router
+{
+    private $routes = [
+        'GET' => [],
+        'POST' => [],
+        'PUT' => [],
+        'DELETE' => []
+    ];
+
+    private $routePrefix = '';
+
+    public function addRoute($method, $route, $handler)
+    {
+        $route = $this->routePrefix . $route;
+        $route = preg_replace('/:(\w+)/', '(?P<$1>[^/]+)', $route);
+        $route = '#^' . $route . '$#';
+        $this->routes[$method][$route] = $handler;
+    }
+
+    public function get($route, $handler)
+    {
+        $this->addRoute('GET', $route, $handler);
+    }
+
+    public function post($route, $handler)
+    {
+        $this->addRoute('POST', $route, $handler);
+    }
+
+    public function put($route, $handler)
+    {
+        $this->addRoute('PUT', $route, $handler);
+    }
+
+    public function delete($route, $handler)
+    {
+        $this->addRoute('DELETE', $route, $handler);
+    }
+
+    public function group($prefix, $callback)
+    {
+        $currentPrefix = $this->routePrefix;
+        $this->routePrefix .= $prefix;
+        call_user_func($callback, $this);
+        $this->routePrefix = $currentPrefix;
+    }
+
+    public function match($method, $url)
+    {
+        $routes = $this->routes[$method] ?? [];
+
+        foreach ($routes as $route => $handler) {
+            if (preg_match($route, $url, $matches)) {
+                array_shift($matches);
+                return [$handler, $matches];
+            }
+        }
+        return [null, []];
+    }
+}
