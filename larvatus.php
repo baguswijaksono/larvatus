@@ -15,7 +15,7 @@ class Larvatus
         $this->url = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
         $this->method = $_SERVER['REQUEST_METHOD'];
         $this->setErrorReporting();
-        session_start();
+        if (session_status() == PHP_SESSION_NONE) { session_start(); }
         $this->router = new Router();
         $this->middleware = new Middleware();
     }
