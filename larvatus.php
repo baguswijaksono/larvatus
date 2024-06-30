@@ -68,7 +68,7 @@ class Larvatus
             list($handler, $params) = $this->router->match($this->method, $this->url);
             if ($handler) {
                 $request->setParams($params);
-                return call_user_func($handler, $request, $response);
+                call_user_func($handler, $request, $response);
             } else {
                 $this->errorResponse($response, 404, 'Not Found');
             }
@@ -100,17 +100,17 @@ class Request
     private $files;
     private $params;
 
-public function __construct()
-{
-    $this->method = filter_input(INPUT_SERVER, 'REQUEST_METHOD', FILTER_SANITIZE_STRING);
-    $this->url = filter_input(INPUT_SERVER, 'REQUEST_URI', FILTER_SANITIZE_URL);
-    $this->headers = getallheaders();
-    $this->body = filter_input(INPUT_SERVER, 'REQUEST_BODY', FILTER_SANITIZE_STRING);
-    $this->queryParams = filter_input_array(INPUT_GET, FILTER_SANITIZE_STRING);
-    $this->parsedBody = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
-    $this->files = $_FILES;
-    $this->params = [];
-}
+    public function __construct()
+    {
+        $this->method = filter_input(INPUT_SERVER, 'REQUEST_METHOD', FILTER_SANITIZE_STRING);
+        $this->url = filter_input(INPUT_SERVER, 'REQUEST_URI', FILTER_SANITIZE_URL);
+        $this->headers = getallheaders();
+        $this->body = filter_input(INPUT_SERVER, 'REQUEST_BODY', FILTER_SANITIZE_STRING);
+        $this->queryParams = filter_input_array(INPUT_GET, FILTER_SANITIZE_STRING);
+        $this->parsedBody = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
+        $this->files = $_FILES;
+        $this->params = [];
+    }
 
     public function getMethod()
     {
@@ -208,7 +208,7 @@ class Middleware
 {
     private $middlewareStack = [];
 
-    public function add($middleware)
+    public function add($middleware): void
     {
         $this->middlewareStack[] = $middleware;
     }
@@ -217,11 +217,11 @@ class Middleware
     {
         $middleware = array_shift($this->middlewareStack);
         if ($middleware) {
-            return $middleware($request, $response, function() use ($request, $response, $next) {
-                return $this->handle($request, $response, $next);
+            $middleware($request, $response, function() use ($request, $response, $next) {
+                $this->handle($request, $response, $next);
             });
         } else {
-            return $next($request, $response);
+            $next($request, $response);
         }
     }
 }
@@ -231,7 +231,7 @@ class ErrorHandler
     public function handle(Request $request, Response $response, callable $next): void
     {
         try {
-            return $next($request, $response);
+            $next($request, $response);
         } catch (Exception $e) {
             $response->setStatus(500);
             $response->json(['error' => $e->getMessage()]);
@@ -279,7 +279,7 @@ class Router
         $this->addRoute('DELETE', $route, $handler);
     }
 
-    public function group($prefix, $callback)
+    public function group($prefix, $callback): void
     {
         $currentPrefix = $this->routePrefix;
         $this->routePrefix .= $prefix;
@@ -312,7 +312,7 @@ class View
         $this->data = [];
     }
 
-    public function set($key, $value)
+    public function set($key, $value): void
     {
         $this->data[$key] = $value;
     }
@@ -333,9 +333,8 @@ class View
         }
     }
 
-    public function display($template, $data = [])
+    public function display($template, $data = []): void
     {
         echo $this->render($template, $data);
     }
 }
-
