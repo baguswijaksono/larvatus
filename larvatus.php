@@ -1,5 +1,11 @@
 <?php
 
+/**
+ * Class Larvatus
+ * 
+ * Handles routing, middleware, error handling, and request/response processing.
+ * Provides methods for defining routes, adding middleware, handling HTTP methods, and listening for requests.
+ */
 class Larvatus
 {
     private $router;
@@ -88,6 +94,11 @@ class Larvatus
     }
 }
 
+/**
+ * Class Request
+ * 
+ * Represents an HTTP request and provides methods to access request data such as method, URL, headers, body, query parameters, and files.
+ */
 class Request
 {
     private $method;
@@ -157,6 +168,12 @@ class Request
     }
 }
 
+/**
+ * Class Response
+ * 
+ * Represents an HTTP response and provides methods to set status, headers, and body content.
+ * Also provides methods to send JSON responses and send the response to the client.
+ */
 class Response
 {
     private $status;
@@ -203,6 +220,11 @@ class Response
     }
 }
 
+/**
+ * Class Middleware
+ * 
+ * Manages a stack of middleware and provides methods to add middleware and handle requests through the middleware stack.
+ */
 class Middleware
 {
     private $middlewareStack = [];
@@ -225,6 +247,11 @@ class Middleware
     }
 }
 
+/**
+ * Class ErrorHandler
+ * 
+ * Handles exceptions that occur during request processing and sends a JSON response with the error message and a 500 status code.
+ */
 class ErrorHandler
 {
     public function handle(Request $request, Response $response, callable $next)
@@ -239,6 +266,12 @@ class ErrorHandler
     }
 }
 
+/**
+ * Class Router
+ * 
+ * Manages route definitions and matches incoming requests to the appropriate route handler.
+ * Supports route grouping with prefixes and dynamic route parameters.
+ */
 class Router
 {
     private $routes = [
@@ -300,6 +333,12 @@ class Router
     }
 }
 
+/**
+ * Class View
+ * 
+ * Handles rendering of templates and passing data to templates.
+ * Provides methods to set data, render templates, and display rendered content.
+ */
 class View
 {
     private $path;
