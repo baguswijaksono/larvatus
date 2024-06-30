@@ -189,6 +189,7 @@ class Response
     public function json($data)
     {
         $this->setHeader('Content-Type', 'application/json');
+        $this->setHeader('Content-Security-Policy', "default-src 'self'");
         $this->body = json_encode($data);
     }
 
