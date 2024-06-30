@@ -100,17 +100,17 @@ class Request
     private $files;
     private $params;
 
-    public function __construct()
-    {
-        $this->method = $_SERVER['REQUEST_METHOD'];
-        $this->url = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-        $this->headers = getallheaders();
-        $this->body = filter_input(INPUT_POST, 'php://input', FILTER_DEFAULT);
-        $this->queryParams = $_GET;
-        $this->parsedBody = $_POST;
-        $this->files = $_FILES;
-        $this->params = [];
-    }
+public function __construct()
+{
+    $this->method = filter_input(INPUT_SERVER, 'REQUEST_METHOD', FILTER_SANITIZE_STRING);
+    $this->url = filter_input(INPUT_SERVER, 'REQUEST_URI', FILTER_SANITIZE_URL);
+    $this->headers = getallheaders();
+    $this->body = filter_input(INPUT_SERVER, 'REQUEST_BODY', FILTER_SANITIZE_STRING);
+    $this->queryParams = filter_input_array(INPUT_GET, FILTER_SANITIZE_STRING);
+    $this->parsedBody = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
+    $this->files = $_FILES;
+    $this->params = [];
+}
 
     public function getMethod()
     {
