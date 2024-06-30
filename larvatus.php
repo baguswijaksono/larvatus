@@ -31,51 +31,51 @@ class Larvatus
         }
     }
 
-    public function get(string $route, callable $handler): void
+    public function get(string $route, callable $handler)
     {
         $this->router->get($route, $handler);
     }
 
-    public function post(string $route, callable $handler): void
+    public function post(string $route, callable $handler)
     {
         $this->router->post($route, $handler);
     }
 
-    public function put(string $route, callable $handler): void
+    public function put(string $route, callable $handler)
     {
         $this->router->put($route, $handler);
     }
 
-    public function delete(string $route, callable $handler): void
+    public function delete(string $route, callable $handler)
     {
         $this->router->delete($route, $handler);
     }
 
-    public function group(string $prefix, callable $callback): void
+    public function group(string $prefix, callable $callback)
     {
         $this->router->group($prefix, $callback);
     }
 
-    public function use(string $middleware): void
+    public function use(string $middleware)
     {
         $this->middleware->add($middleware);
     }
 
-    public function listen(): void
+    public function listen()
     {
         $this->middleware->add([new ErrorHandler(), 'handle']);
         $this->middleware->handle(new Request(), new Response(), function($request, $response) {
             list($handler, $params) = $this->router->match($this->method, $this->url);
             if ($handler) {
                 $request->setParams($params);
-                call_user_func($handler, $request, $response);
+                return call_user_func($handler, $request, $response);
             } else {
                 $this->errorResponse($response, 404, 'Not Found');
             }
         });
     }
 
-    public function errorResponse(Response $response, int $status, string $message): void
+    public function errorResponse(Response $response, int $status, string $message)
     {
         $response->setStatus($status);
         $response->json(['error' => $message]);
@@ -87,7 +87,6 @@ class Larvatus
         
     }
 }
-
 
 class Request
 {
@@ -105,7 +104,7 @@ class Request
         $this->method = filter_input(INPUT_SERVER, 'REQUEST_METHOD', FILTER_SANITIZE_STRING);
         $this->url = filter_input(INPUT_SERVER, 'REQUEST_URI', FILTER_SANITIZE_URL);
         $this->headers = getallheaders();
-        $this->body = filter_input(INPUT_SERVER, 'REQUEST_BODY', FILTER_SANITIZE_STRING);
+        $this->body = file_get_contents('php://input');
         $this->queryParams = filter_input_array(INPUT_GET, FILTER_SANITIZE_STRING);
         $this->parsedBody = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
         $this->files = $_FILES;
@@ -208,30 +207,30 @@ class Middleware
 {
     private $middlewareStack = [];
 
-    public function add($middleware): void
+    public function add($middleware)
     {
         $this->middlewareStack[] = $middleware;
     }
 
-    public function handle(Request $request, Response $response, callable $next): void
+    public function handle(Request $request, Response $response, callable $next)
     {
         $middleware = array_shift($this->middlewareStack);
         if ($middleware) {
-            $middleware($request, $response, function() use ($request, $response, $next) {
-                $this->handle($request, $response, $next);
+            return $middleware($request, $response, function() use ($request, $response, $next) {
+                return $this->handle($request, $response, $next);
             });
         } else {
-            $next($request, $response);
+            return $next($request, $response);
         }
     }
 }
 
 class ErrorHandler
 {
-    public function handle(Request $request, Response $response, callable $next): void
+    public function handle(Request $request, Response $response, callable $next)
     {
         try {
-            $next($request, $response);
+            return $next($request, $response);
         } catch (Exception $e) {
             $response->setStatus(500);
             $response->json(['error' => $e->getMessage()]);
@@ -251,7 +250,7 @@ class Router
 
     private $routePrefix = '';
 
-    public function addRoute(string $method, string $route, callable $handler): void
+    public function addRoute(string $method, string $route, callable $handler)
     {
         $route = $this->routePrefix . $route;
         $route = preg_replace('/:(\w+)/', '(?P<$1>[^/]+)', $route);
@@ -259,27 +258,27 @@ class Router
         $this->routes[$method][$route] = $handler;
     }
 
-    public function get(string $route, callable $handler): void
+    public function get(string $route, callable $handler)
     {
         $this->addRoute('GET', $route, $handler);
     }
 
-    public function post(string $route, callable $handler): void
+    public function post(string $route, callable $handler)
     {
         $this->addRoute('POST', $route, $handler);
     }
 
-    public function put(string $route, callable $handler): void
+    public function put(string $route, callable $handler)
     {
         $this->addRoute('PUT', $route, $handler);
     }
 
-    public function delete(string $route, callable $handler): void
+    public function delete(string $route, callable $handler)
     {
         $this->addRoute('DELETE', $route, $handler);
     }
 
-    public function group($prefix, $callback): void
+    public function group($prefix, $callback)
     {
         $currentPrefix = $this->routePrefix;
         $this->routePrefix .= $prefix;
@@ -312,7 +311,7 @@ class View
         $this->data = [];
     }
 
-    public function set($key, $value): void
+    public function set($key, $value)
     {
         $this->data[$key] = $value;
     }
@@ -333,7 +332,7 @@ class View
         }
     }
 
-    public function display($template, $data = []): void
+    public function display($template, $data = [])
     {
         echo $this->render($template, $data);
     }
