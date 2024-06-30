@@ -31,37 +31,37 @@ class Larvatus
         }
     }
 
-    public function get($route, $handler)
+    public function get(string $route, callable $handler): void
     {
         $this->router->get($route, $handler);
     }
 
-    public function post($route, $handler)
+    public function post(string $route, callable $handler): void
     {
         $this->router->post($route, $handler);
     }
 
-    public function put($route, $handler)
+    public function put(string $route, callable $handler): void
     {
         $this->router->put($route, $handler);
     }
 
-    public function delete($route, $handler)
+    public function delete(string $route, callable $handler): void
     {
         $this->router->delete($route, $handler);
     }
 
-    public function group($prefix, $callback)
+    public function group(string $prefix, callable $callback): void
     {
         $this->router->group($prefix, $callback);
     }
 
-    public function use($middleware)
+    public function use(string $middleware): void
     {
         $this->middleware->add($middleware);
     }
 
-    public function listen()
+    public function listen(): void
     {
         $this->middleware->add([new ErrorHandler(), 'handle']);
         $this->middleware->handle(new Request(), new Response(), function($request, $response) {
@@ -75,7 +75,7 @@ class Larvatus
         });
     }
 
-    private function errorResponse($response, $status, $message)
+    public function errorResponse(Response $response, int $status, string $message): void
     {
         $response->setStatus($status);
         $response->json(['error' => $message]);
@@ -212,7 +212,7 @@ class Middleware
         $this->middlewareStack[] = $middleware;
     }
 
-    public function handle($request, $response, $next)
+    public function handle(Request $request, Response $response, callable $next): void
     {
         $middleware = array_shift($this->middlewareStack);
         if ($middleware) {
@@ -227,7 +227,7 @@ class Middleware
 
 class ErrorHandler
 {
-    public function handle($request, $response, $next)
+    public function handle(Request $request, Response $response, callable $next): void
     {
         try {
             return $next($request, $response);
@@ -250,7 +250,7 @@ class Router
 
     private $routePrefix = '';
 
-    public function addRoute($method, $route, $handler)
+    public function addRoute(string $method, string $route, callable $handler): void
     {
         $route = $this->routePrefix . $route;
         $route = preg_replace('/:(\w+)/', '(?P<$1>[^/]+)', $route);
@@ -258,22 +258,22 @@ class Router
         $this->routes[$method][$route] = $handler;
     }
 
-    public function get($route, $handler)
+    public function get(string $route, callable $handler): void
     {
         $this->addRoute('GET', $route, $handler);
     }
 
-    public function post($route, $handler)
+    public function post(string $route, callable $handler): void
     {
         $this->addRoute('POST', $route, $handler);
     }
 
-    public function put($route, $handler)
+    public function put(string $route, callable $handler): void
     {
         $this->addRoute('PUT', $route, $handler);
     }
 
-    public function delete($route, $handler)
+    public function delete(string $route, callable $handler): void
     {
         $this->addRoute('DELETE', $route, $handler);
     }
@@ -286,7 +286,7 @@ class Router
         $this->routePrefix = $currentPrefix;
     }
 
-    public function match($method, $url)
+    public function match(string $method, string $url): array
     {
         $routes = $this->routes[$method] ?? [];
 
