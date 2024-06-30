@@ -105,7 +105,7 @@ class Request
         $this->method = $_SERVER['REQUEST_METHOD'];
         $this->url = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
         $this->headers = getallheaders();
-        $this->body = file_get_contents('php://input');
+        $this->body = filter_input(INPUT_POST, 'php://input', FILTER_DEFAULT);
         $this->queryParams = $_GET;
         $this->parsedBody = $_POST;
         $this->files = $_FILES;
